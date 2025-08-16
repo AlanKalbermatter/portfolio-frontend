@@ -1,20 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { EnvelopeIcon, PhoneIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import emailjs from '@emailjs/browser';
 import { personalInfoApi } from '../services/api';
 import { PersonalInfo } from '../types';
+
+// EmailJS configuration - using environment variables only
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
 
 const Contact: React.FC = () => {
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const form = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const fetchPersonalInfo = async () => {
@@ -31,32 +34,86 @@ const Contact: React.FC = () => {
     fetchPersonalInfo();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitStatus('idle');
+    setErrorMessage('');
 
-    try {
-      // Here you would normally send the form data to your backend
-      // For now, we'll simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setSubmitStatus('success');
-      setFormData({ name: '', email: '', subject: '', message: '' });
-    } catch (error) {
+    // Check if EmailJS is properly configured
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+      console.error('EmailJS configuration missing. Using mailto fallback.');
       setSubmitStatus('error');
-    } finally {
+      setErrorMessage('Email service not configured. Using direct email fallback.');
+      setTimeout(() => {
+        handleMailtoFallback();
+      }, 2000);
       setIsSubmitting(false);
+      return;
+    }
 
-      // Reset status after 3 seconds
-      setTimeout(() => setSubmitStatus('idle'), 3000);
+    if (form.current) {
+      try {
+        // Get form data and prepare JSON object
+        const formData = new FormData(form.current);
+        const templateParams = {
+          from_name: formData.get('from_name') as string,
+          from_email: formData.get('from_email') as string,
+          subject: formData.get('subject') as string,
+          message: formData.get('message') as string,
+          to_email: personalInfo?.email || process.env.REACT_APP_CONTACT_EMAIL || 'alan.kalbermatter.dev@gmail.com',
+          reply_to: formData.get('from_email') as string,
+        };
+
+        // Debug: Log what we're about to send
+        console.log('=== DEBUGGING EMAILJS REQUEST ===');
+        console.log('SERVICE_ID:', EMAILJS_SERVICE_ID);
+        console.log('TEMPLATE_ID:', EMAILJS_TEMPLATE_ID);
+        console.log('PUBLIC_KEY:', EMAILJS_PUBLIC_KEY);
+        console.log('Template params:');
+        console.log(JSON.stringify(templateParams, null, 2));
+
+        const result = await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          templateParams,
+          EMAILJS_PUBLIC_KEY
+        );
+
+        console.log('Email sent successfully:', result.text);
+        setSubmitStatus('success');
+        form.current.reset(); // Reset the form after success
+
+      } catch (error: any) {
+        console.error('Failed to send email:', error);
+        setSubmitStatus('error');
+        setErrorMessage(error.text || 'EmailJS service failed. Using email client fallback.');
+
+        // Auto-fallback to mailto after showing error briefly
+        setTimeout(() => {
+          handleMailtoFallback();
+        }, 2000);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  // Alternative: Simple mailto fallback
+  const handleMailtoFallback = () => {
+    if (form.current) {
+      const formData = new FormData(form.current);
+      const name = formData.get('from_name') as string;
+      const email = formData.get('from_email') as string;
+      const subject = formData.get('subject') as string;
+      const message = formData.get('message') as string;
+
+      const mailtoSubject = encodeURIComponent(subject || 'Portfolio Contact');
+      const mailtoBody = encodeURIComponent(
+        `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
+      );
+      const mailtoUrl = `mailto:${personalInfo?.email || 'alan.kalbermatter.dev@gmail.com'}?subject=${mailtoSubject}&body=${mailtoBody}`;
+      window.location.href = mailtoUrl;
     }
   };
 
@@ -122,7 +179,7 @@ const Contact: React.FC = () => {
             <div className="bg-gray-50 rounded-2xl p-8">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Send me a message</h3>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form ref={form} onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -131,9 +188,7 @@ const Contact: React.FC = () => {
                     <input
                       type="text"
                       id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
+                      name="from_name"
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                       placeholder="Your name"
@@ -147,12 +202,10 @@ const Contact: React.FC = () => {
                     <input
                       type="email"
                       id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
+                      name="from_email"
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
-                      placeholder="your.email@example.com"
+                      placeholder="alan.kalbermatter.dev@gmail.com"
                     />
                   </div>
                 </div>
@@ -165,8 +218,6 @@ const Contact: React.FC = () => {
                     type="text"
                     id="subject"
                     name="subject"
-                    value={formData.subject}
-                    onChange={handleInputChange}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                     placeholder="What's this about?"
@@ -180,8 +231,6 @@ const Contact: React.FC = () => {
                   <textarea
                     id="message"
                     name="message"
-                    value={formData.message}
-                    onChange={handleInputChange}
                     required
                     rows={5}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200 resize-none"
@@ -211,6 +260,17 @@ const Contact: React.FC = () => {
                   )}
                 </button>
 
+                {/* Fallback mailto button */}
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={handleMailtoFallback}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium underline transition-colors"
+                  >
+                    Or send email directly with your email client
+                  </button>
+                </div>
+
                 {/* Status Messages */}
                 {submitStatus === 'success' && (
                   <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
@@ -221,6 +281,13 @@ const Contact: React.FC = () => {
                 {submitStatus === 'error' && (
                   <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
                     ❌ Something went wrong. Please try again or contact me directly.
+                  </div>
+                )}
+
+                {/* Error Message for EmailJS */}
+                {submitStatus === 'error' && errorMessage && (
+                  <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                    ❌ {errorMessage}
                   </div>
                 )}
               </form>
@@ -254,7 +321,7 @@ const Contact: React.FC = () => {
                     href={`mailto:${personalInfo?.email}`}
                     className="text-gray-600 hover:text-blue-600 transition-colors"
                   >
-                    {personalInfo?.email || 'contact@alankalbermatter.com'}
+                    {personalInfo?.email || 'alan.kalbermatter.dev@gmail.com'}
                   </a>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CalendarIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
-import { experiencesApi } from '../services/api';
+import { experienceApi } from '../services/api';
 import { Experience as ExperienceType } from '../types';
 
 const Experience: React.FC = () => {
@@ -11,8 +11,14 @@ const Experience: React.FC = () => {
   useEffect(() => {
     const fetchExperiences = async () => {
       try {
-        const response = await experiencesApi.getAll();
-        setExperiences(response.data);
+        const response = await experienceApi.getAll();
+        // Sort by start date, current positions first
+        const sortedExperiences = response.data.sort((a, b) => {
+          if (a.isCurrent && !b.isCurrent) return -1;
+          if (!a.isCurrent && b.isCurrent) return 1;
+          return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+        });
+        setExperiences(sortedExperiences);
       } catch (error) {
         console.error('Error fetching experiences:', error);
       } finally {

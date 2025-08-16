@@ -68,18 +68,18 @@ const About: React.FC = () => {
           >
             <div className="prose prose-lg text-gray-600 max-w-none">
               <p className="text-xl leading-relaxed">
-                {personalInfo?.bio || "I'm a passionate software developer with a love for creating innovative solutions that make a difference."}
+                {personalInfo?.summary || "I'm a passionate software developer with a love for creating innovative solutions that make a difference."}
               </p>
 
               <div className="mt-8 space-y-4">
                 <div className="flex items-center">
                   <span className="font-semibold text-gray-900 w-24">Name:</span>
-                  <span className="text-gray-600">{personalInfo?.name || 'Alan Kalbermatter'}</span>
+                  <span className="text-gray-600">{personalInfo?.fullName || 'Alan Kalbermatter'}</span>
                 </div>
 
                 <div className="flex items-center">
                   <span className="font-semibold text-gray-900 w-24">Role:</span>
-                  <span className="text-gray-600">{personalInfo?.jobTitle || 'Software Developer'}</span>
+                  <span className="text-gray-600">{personalInfo?.title || 'Software Developer'}</span>
                 </div>
 
                 <div className="flex items-center">
@@ -93,7 +93,7 @@ const About: React.FC = () => {
                     href={`mailto:${personalInfo?.email}`}
                     className="text-blue-600 hover:text-blue-700 transition-colors"
                   >
-                    {personalInfo?.email || 'contact@alankalbermatter.com'}
+                    {personalInfo?.email || 'alan.kalbermatter.dev@gmail.com'}
                   </a>
                 </div>
               </div>
@@ -140,7 +140,6 @@ const About: React.FC = () => {
               {personalInfo?.profileImageUrl ? (
                 <img
                   src={personalInfo.profileImageUrl}
-                  alt={personalInfo.name}
                   className="w-full max-w-md mx-auto rounded-2xl shadow-2xl object-cover"
                 />
               ) : (

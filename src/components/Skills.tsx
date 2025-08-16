@@ -152,30 +152,31 @@ const Skills: React.FC = () => {
 
                   {/* Skill Level Progress */}
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center text-sm">
+                    <div className="flex justify-between items-center mb-2">
                       <span className="text-gray-600">Proficiency</span>
                       <span className={`font-medium ${
-                        skill.level >= 8 ? 'text-green-600' :
-                        skill.level >= 6 ? 'text-blue-600' :
-                        skill.level >= 4 ? 'text-yellow-600' : 'text-gray-600'
+                        skill.proficiencyLevel >= 8 ? 'text-green-600' :
+                        skill.proficiencyLevel >= 6 ? 'text-blue-600' :
+                        skill.proficiencyLevel >= 4 ? 'text-yellow-600' : 'text-gray-600'
                       }`}>
-                        {getSkillLevel(skill.level)}
+                        {getSkillLevel(skill.proficiencyLevel)}
                       </span>
                     </div>
 
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    {/* Progress bar */}
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
                       <motion.div
                         initial={{ width: 0 }}
-                        whileInView={{ width: `${skill.level * 10}%` }}
+                        whileInView={{ width: `${skill.proficiencyLevel * 10}%` }}
                         transition={{ duration: 1, delay: index * 0.1 }}
                         viewport={{ once: true }}
-                        className={`h-2 rounded-full ${getSkillColor(skill.level)}`}
+                        className={`h-2 rounded-full ${getSkillColor(skill.proficiencyLevel)}`}
                       ></motion.div>
                     </div>
 
                     <div className="text-right">
                       <span className="text-xs text-gray-500">
-                        {skill.level}/10
+                        {skill.proficiencyLevel}/10
                       </span>
                     </div>
                   </div>
@@ -229,7 +230,7 @@ const Skills: React.FC = () => {
 
                 <div className="text-center">
                   <div className="text-3xl font-bold text-green-600 mb-2">
-                    {skills.filter(s => s.level >= 8).length}
+                    {skills.filter(s => s.proficiencyLevel >= 8).length}
                   </div>
                   <div className="text-gray-600 text-sm">Expert Level</div>
                 </div>

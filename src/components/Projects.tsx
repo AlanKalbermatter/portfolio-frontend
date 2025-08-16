@@ -12,17 +12,12 @@ const Projects: React.FC = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await projectsApi.getFeatured();
-        setProjects(response.data);
+        const response = await projectsApi.getAll();
+        // Filter for featured projects or show first 6 if no featured flag
+        const featuredProjects = response.data.filter(project => project.isFeatured);
+        setProjects(featuredProjects.length > 0 ? featuredProjects : response.data.slice(0, 6));
       } catch (error) {
         console.error('Error fetching projects:', error);
-        // Fallback to all projects if featured fails
-        try {
-          const allResponse = await projectsApi.getAll();
-          setProjects(allResponse.data.slice(0, 6)); // Show first 6
-        } catch (err) {
-          console.error('Error fetching all projects:', err);
-        }
       } finally {
         setLoading(false);
       }
