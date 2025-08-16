@@ -140,6 +140,7 @@ const About: React.FC = () => {
               {personalInfo?.profileImageUrl ? (
                 <img
                   src={personalInfo.profileImageUrl}
+                  alt={`${personalInfo.name || 'Alan Kalbermatter'} - Professional headshot`}
                   className="w-full max-w-md mx-auto rounded-2xl shadow-2xl object-cover"
                 />
               ) : (
