@@ -12,9 +12,12 @@ const Skills: React.FC = () => {
     const fetchSkills = async () => {
       try {
         const response = await skillsApi.getAll();
-        setSkills(response.data);
+        // Ensure response.data is an array before setting skills
+        const skillsData = Array.isArray(response.data) ? response.data : [];
+        setSkills(skillsData);
       } catch (error) {
         console.error('Error fetching skills:', error);
+        setSkills([]); // Set empty array on error
       } finally {
         setLoading(false);
       }
@@ -23,14 +26,14 @@ const Skills: React.FC = () => {
     fetchSkills();
   }, []);
 
-  // Group skills by category
-  const skillsByCategory = skills.reduce((acc, skill) => {
+  // Group skills by category - ensure skills is an array before using reduce
+  const skillsByCategory = Array.isArray(skills) ? skills.reduce((acc, skill) => {
     if (!acc[skill.category]) {
       acc[skill.category] = [];
     }
     acc[skill.category].push(skill);
     return acc;
-  }, {} as Record<string, Skill[]>);
+  }, {} as Record<string, Skill[]>) : {};
 
   const categories = ['all', ...Object.keys(skillsByCategory)];
   const filteredSkills = selectedCategory === 'all' ? skills : skillsByCategory[selectedCategory] || [];

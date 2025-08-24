@@ -13,11 +13,14 @@ const Projects: React.FC = () => {
     const fetchProjects = async () => {
       try {
         const response = await projectsApi.getAll();
+        // Ensure response.data is an array before filtering
+        const projectsData = Array.isArray(response.data) ? response.data : [];
         // Filter for featured projects or show first 6 if no featured flag
-        const featuredProjects = response.data.filter(project => project.isFeatured);
-        setProjects(featuredProjects.length > 0 ? featuredProjects : response.data.slice(0, 6));
+        const featuredProjects = projectsData.filter(project => project.isFeatured);
+        setProjects(featuredProjects.length > 0 ? featuredProjects : projectsData.slice(0, 6));
       } catch (error) {
         console.error('Error fetching projects:', error);
+        setProjects([]); // Set empty array on error
       } finally {
         setLoading(false);
       }

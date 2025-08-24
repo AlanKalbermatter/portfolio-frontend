@@ -12,8 +12,10 @@ const Experience: React.FC = () => {
     const fetchExperiences = async () => {
       try {
         const response = await experienceApi.getAll();
+        // Ensure response.data is an array before sorting
+        const experiencesData = Array.isArray(response.data) ? response.data : [];
         // Sort by start date, current positions first
-        const sortedExperiences = response.data.sort((a, b) => {
+        const sortedExperiences = experiencesData.sort((a, b) => {
           if (a.isCurrent && !b.isCurrent) return -1;
           if (!a.isCurrent && b.isCurrent) return 1;
           return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
@@ -21,6 +23,7 @@ const Experience: React.FC = () => {
         setExperiences(sortedExperiences);
       } catch (error) {
         console.error('Error fetching experiences:', error);
+        setExperiences([]); // Set empty array on error
       } finally {
         setLoading(false);
       }
